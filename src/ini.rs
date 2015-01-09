@@ -356,10 +356,10 @@ impl<T: Buffer> Parser<T> {
     }
 
     fn parse_whitespace(&mut self) {
-        while !self.eof() && self.ch.unwrap() == ' ' ||
+        while !self.eof() && (self.ch.unwrap() == ' ' ||
             self.ch.unwrap() == '\n' ||
             self.ch.unwrap() == '\t' ||
-            self.ch.unwrap() == '\r' { self.bump(); }
+            self.ch.unwrap() == '\r') { self.bump(); }
     }
 
     pub fn parse(&mut self) -> Result<Ini, Error> {
