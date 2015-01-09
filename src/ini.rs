@@ -356,7 +356,7 @@ impl<R: Read> Parser<R> {
     }
 
     fn parse_whitespace(&mut self) {
-        while self.ch.unwrap() == ' ' ||
+        while !self.eof() && self.ch.unwrap() == ' ' ||
             self.ch.unwrap() == '\n' ||
             self.ch.unwrap() == '\t' ||
             self.ch.unwrap() == '\r' { self.bump(); }
@@ -370,6 +370,9 @@ impl<R: Read> Parser<R> {
         while !self.eof() {
             self.parse_whitespace();
             debug!("line:{}, col:{}", self.line, self.col);
+            if self.eof() {
+                return Ok(result);
+            }
             match self.ch.unwrap() {
                 ';' => {
                     self.parse_comment();
