@@ -236,26 +236,26 @@ impl Ini {
 }
 
 impl Ini {
-    pub fn load_from_str(buf: &str) -> Result<Ini, Error> {
+    pub fn load_from_str(buf: &str, comment_char: Option<char>) -> Result<Ini, Error> {
         let bufreader = BufReader::new(Cursor::new(buf.as_bytes().to_vec()));
-        let mut parser = Parser::new(bufreader.chars());
+        let mut parser = Parser::new(bufreader.chars(), comment_char);
         parser.parse()
     }
 
-    pub fn read_from(reader: &mut Read) -> Result<Ini, Error> {
+    pub fn read_from(reader: &mut Read, comment_char: Option<char>) -> Result<Ini, Error> {
         let bufr = BufReader::new(reader);
-        let mut parser = Parser::new(bufr.chars());
+        let mut parser = Parser::new(bufr.chars(), comment_char);
         parser.parse()
     }
 
-    pub fn load_from_file(filename : &str) -> Result<Ini, Error> {
+    pub fn load_from_file(filename : &str, comment_char: Option<char>) -> Result<Ini, Error> {
         let mut reader = match File::open(&Path::new(filename)) {
             Err(e) => {
                 return Err(Error {line: 0, col: 0, msg: format!("Unable to open `{}`: {}", filename, e)})
             }
             Ok(r) => r
         };
-        Ini::read_from(&mut reader)
+        Ini::read_from(&mut reader, comment_char)
     }
 }
 
@@ -300,6 +300,7 @@ struct Parser<R: Read> {
     rdr: io::Chars<R>,
     line: usize,
     col: usize,
+    comment_char: char,
 }
 
 #[derive(Debug)]
@@ -316,12 +317,16 @@ impl Display for Error {
 }
 
 impl<R: Read> Parser<R> {
-    pub fn new(rdr: io::Chars<R>) -> Parser<R> {
+    pub fn new(rdr: io::Chars<R>, comment_char: Option<char>) -> Parser<R> {
         let mut p = Parser {
             ch: None,
             line: 0,
             col: 0,
-            rdr: rdr
+            rdr: rdr,
+            comment_char: match comment_char {
+                Some(c) => c,
+                _ => ';',
+            },
         };
         p.bump();
         p
@@ -374,7 +379,7 @@ impl<R: Read> Parser<R> {
                 return Ok(result);
             }
             match self.ch.unwrap() {
-                ';' => {
+                c if c == self.comment_char => {
                     self.parse_comment();
                     debug!("parse comment");
                 }
@@ -513,7 +518,7 @@ mod test {
     #[test]
     fn load_from_str_with_valid_input() {
         let input = "[sec1]\nkey1=val1\nkey2=377\n[sec2]foo=bar\n";
-        let opt = Ini::load_from_str(input);
+        let opt = Ini::load_from_str(input, None);
         assert!(opt.is_ok());
 
         let output = opt.unwrap();
@@ -532,7 +537,7 @@ mod test {
     #[test]
     fn load_from_str_without_ending_newline() {
         let input = "[sec1]\nkey1=val1\nkey2=377\n[sec2]foo=bar";
-        let opt = Ini::load_from_str(input);
+        let opt = Ini::load_from_str(input, None);
         assert!(opt.is_ok());
     }
 }

@@ -36,7 +36,7 @@
 //! conf.write_to_file("conf.ini").unwrap();
 //!
 //!
-//! let i = Ini::load_from_file("conf.ini").unwrap();
+//! let i = Ini::load_from_file("conf.ini", None).unwrap();
 //! for (sec, prop) in i.iter() {
 //!    println!("Section: {}", *sec);
 //!    for (k, v) in prop.iter() {
